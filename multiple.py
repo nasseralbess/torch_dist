@@ -7,7 +7,7 @@ from torch.distributed import init_process_group, destroy_process_group
 import os
 
 def ddp_setup(rank, world_size):
-    os.environ["MASTER_ADDR"]="0.0.0.0"
+    os.environ["MASTER_ADDR"]="192.168.1.10"
     os.environ["MASTER_PORT"]= "12355"
     init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
@@ -16,7 +16,6 @@ class MyTrainDataset(Dataset):
     def __init__(self, size):
         self.size = size
         self.data = [(torch.rand(20), torch.rand(1)) for _ in range(size)]
-        self.model = DDP(self.model, device_ids=[self.gpu_id])
     def __len__(self):
         return self.size
     
@@ -30,6 +29,8 @@ class Trainer:
         self.train_data = train_data
         self.optimizer = optimizer
         self.save_every = save_every
+        self.model = DDP(self.model, device_ids=[self.gpu_id])
+ 
         
     def _run_batch(self, source, targets):
         self.optimizer.zero_grad()
@@ -54,7 +55,7 @@ class Trainer:
     def train(self, max_epochs: int):
         for epoch in range(max_epochs):
             self._run_epoch(epoch)
-            if self.gpu_id = 0 and epoch % self.save_every == 0:
+            if self.gpu_id == 0 and epoch % self.save_every == 0:
                 self._save_checkpoint(epoch)
     
 def  load_train_objs():
@@ -64,9 +65,9 @@ def  load_train_objs():
     return train_set, model, optimizer
 
 def prepare_dataloader(dataset: Dataset, batch_size: int):
-    return DataLoader(dataset, batch_size=batch_size, pin_memory=True, shuffle=False, sampler=DistributedSampler(dataset)
+    return DataLoader(dataset, batch_size=batch_size, pin_memory=True, shuffle=False, sampler=DistributedSampler(dataset))
 
-def main(rank:int, world_size:int total_epochs:int, save_every:int):
+def main(rank:int, world_size:int, total_epochs:int, save_every:int):
     ddp_setup(rank, world_size)
     dataset, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(dataset, batch_size=32)
@@ -79,8 +80,8 @@ if __name__=="__main__":
     import sys
     total_epochs = int(sys.argv[1])
     save_every = int(sys.argv[2])
-    device = 0
+    device = 1
     #device = 'cpu'
     world_size = 2
     mp.spawn(main,args=(world_size,total_epochs, save_every), nprocs=world_size)
-    main(device, total_epochs, save_every)
+
