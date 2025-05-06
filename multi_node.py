@@ -12,6 +12,10 @@ import os
 
 def ddp_setup():
     torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
+    os.environ["TP_SOCKET_IFNAME"]="eno1" 
+    os.environ["NCCL_SOCKET_IFNAME"]="eno1"
+    os.environ["GLOO_SOCKET_IFNAME"]="eno1"
+    os.environ["NCCL_DEBUG"]="INFO"
     init_process_group(backend="nccl")
 
 class Trainer:

@@ -1,0 +1,12 @@
+After running the torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10 command, we were faced a socket timeout issue:
+(cluster-torch) n2@n2-System-Product-Name:~$ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10
+[E414 22:01:32.590789345 socket.cpp:1023] [c10d] The client socket has timed out after 60000ms while trying to connect to (192.168.1.10, 12355).
+
+That issue was solved after running sudo vim /etc/hosts and changing :
+127.0.0.1 localhost
+127.0.0.1 n2-System-Product-Name
+
+To:
+127.0.0.1 localhost
+MASTER_IP_ADDRESS n2-System-Product-Name
+On both the master node and the worker nodes.
