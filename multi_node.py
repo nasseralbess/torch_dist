@@ -12,7 +12,7 @@ import time
 import torch
 from torch.distributed import init_process_group, barrier
 
-
+# will this change the acc pushing
 def ddp_setup():
     local_rank = int(os.environ["LOCAL_RANK"])
     global_rank = int(os.environ["RANK"])
