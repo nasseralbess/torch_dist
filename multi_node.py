@@ -14,7 +14,6 @@ from torch.distributed import init_process_group, barrier
 
 
 def ddp_setup():
-    # Get distributed config from environment
     local_rank = int(os.environ["LOCAL_RANK"])
     global_rank = int(os.environ["RANK"])
     world_size = int(os.environ["WORLD_SIZE"])
