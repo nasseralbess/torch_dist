@@ -2,21 +2,70 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from datautils import MyTrainDataset
-
 import torch.multiprocessing as mp
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
+import datetime
 import os
+import time
+import torch
+from torch.distributed import init_process_group, barrier
 
 
 def ddp_setup():
-    torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
-    os.environ["TP_SOCKET_IFNAME"]="eno1" 
-    os.environ["NCCL_SOCKET_IFNAME"]="eno1"
-    os.environ["GLOO_SOCKET_IFNAME"]="eno1"
-    os.environ["NCCL_DEBUG"]="INFO"
-    init_process_group(backend="nccl")
+    # Get distributed config from environment
+    local_rank = int(os.environ["LOCAL_RANK"])
+    global_rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    
+    # Set CUDA device
+    torch.cuda.set_device(local_rank)
+    
+    # Configure file-based initialization
+    init_file = "/mnt/nfs/sharedfile"  # Shared across nodes
+    
+    # Ensure directory exists (only on master)
+    if global_rank == 0:
+        os.makedirs(os.path.dirname(init_file), exist_ok=True)
+        # Create and set permissions for init file
+        open(init_file, "w").close()
+        os.chmod(init_file, 0o777)  # rwx for all
+    
+    # Wait for master to create file
+    torch.distributed.barrier()
+    
+    # Initialize process group
+    try:
+        init_process_group(
+            backend="nccl",
+            init_method=f"file://{init_file}",
+            rank=global_rank,
+            world_size=world_size,
+            timeout=datetime.timedelta(seconds=120),
+            device_id=local_rank
+        )
+        print(f"[Rank {global_rank}] Process group initialized successfully")
+    except Exception as e:
+        print(f"[Rank {global_rank}] Failed to initialize process group: {str(e)}")
+        raise
+    finally:
+        # Clean up (only on last rank)
+        if global_rank == world_size - 1 and os.path.exists(init_file):
+            os.remove(init_file)
+
+def test_connection_to_master():
+    import socket
+    master_addr = os.environ["MASTER_ADDR"]
+    master_port = int(os.environ["MASTER_PORT"])
+    print(f"Testing connection to {master_addr}:{master_port}")
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(5)
+            s.connect((master_addr, master_port))
+            print("Connection test successful")
+    except Exception as e:
+        raise RuntimeError(f"Failed to connect to master at {master_addr}:{master_port}: {e}")
 
 class Trainer:
     def __init__(
