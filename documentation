@@ -11,7 +11,7 @@ To:
 MASTER_IP_ADDRESS n2-System-Product-Name
 On both the master node and the worker nodes.
 
-
+Note: pytorch distributed connection is different from NCCL connection. NCCL works only on TCP
 while trying to solve the rendevous error:
 Worker Node error:
 (cluster-torch) n2@n2-System-Product-Name:~$ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10
