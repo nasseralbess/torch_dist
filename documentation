@@ -10,3 +10,16 @@ To:
 127.0.0.1 localhost
 MASTER_IP_ADDRESS n2-System-Product-Name
 On both the master node and the worker nodes.
+
+
+while trying to solve the rendevous error:
+Worker Node error:
+(cluster-torch) n2@n2-System-Product-Name:~$ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10
+W0506 19:27:30.597000 3995 site-packages/torch/distributed/elastic/rendezvous/dynamic_rendezvous.py:1284] The node 'n2-System-Product-Name_3995_0' has failed to shutdown the rendezvous '456' due to an error of type RendezvousConnectionError.
+
+- we changed pytorch distributed initialization from tcp to nfs  
+- we switched from torchrun to python3 run (manual python run)
+- with nfs we encountered a new error: synchronization error (nroots mismatch)
+- when we switched back to tcp for the sake of trying: still synchronization error (nroots mismatch but apparently no nranks mismatch)
+- we tried putting a delay to solve the sync error but didn't work
+- suspected reason to why sync error: nccl versions mismatch between worker and master.

@@ -10,6 +10,7 @@ from torch.distributed import init_process_group, destroy_process_group
 import os
 
 
+
 def ddp_setup():
     torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
     os.environ["TP_SOCKET_IFNAME"]="eno1" 
@@ -17,6 +18,7 @@ def ddp_setup():
     os.environ["GLOO_SOCKET_IFNAME"]="eno1"
     os.environ["NCCL_DEBUG"]="INFO"
     init_process_group(backend="nccl")
+
 
 class Trainer:
     def __init__(
