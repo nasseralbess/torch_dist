@@ -1,3 +1,15 @@
+Set Up:
+1) we set up an ethernet connection through a switch for the nodes to communicate through and to avoid issues with the internet connection of the university.
+2) Ubuntu was set up as the systems OS to allow communication between the nodes, this was possible by doing dual boots. 
+3) a matching conda environment was set up on all the nodes to ensure compatibility. 
+4) We manually set up an IPv4 address for all of the nodes staring with 192.168.1.(10-12)
+5) Smooth connectivity was checked through the command ping 192.168.1.XX. 
+6) We followed a YouTube tutorial that demonstrated a simple PyTorch DDP setup for a single node with multiple GPUs. We then adapted the code to work in a multi-node GPU cluster environment, allowing us to test and apply distributed training across multiple machines.
+
+Challenges and solutions:
+1) Adjusting the code to suit the multinode gpu clustering.
+2) time-out error
+the error message:
 After running the torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10 command, we were faced a socket timeout issue:
 (cluster-torch) n2@n2-System-Product-Name:~$ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10
 [E414 22:01:32.590789345 socket.cpp:1023] [c10d] The client socket has timed out after 60000ms while trying to connect to (192.168.1.10, 12355).
@@ -8,18 +20,44 @@ That issue was solved after running sudo vim /etc/hosts and changing :
 
 To:
 127.0.0.1 localhost
-MASTER_IP_ADDRESS n2-System-Product-Name
+MASTER_IP_ADDRESS (MASTER NODE NAME)-System-Product-Name
+WORKER_IP_ADDRESS (WORKER NODE NAME)-System-Product-Name (all the worker nodes were listed)
 On both the master node and the worker nodes.
 
-Note: pytorch distributed connection is different from NCCL connection. NCCL works only on TCP
-while trying to solve the rendevous error:
+3) rendezvous error:
+while trying to solve the rendezvous error:
 Worker Node error:
 (cluster-torch) n2@n2-System-Product-Name:~$ torchrun --nproc_per_node=1 --nnodes=2 --node_rank=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=192.168.1.10:12355 multi_node.py 50 10
 W0506 19:27:30.597000 3995 site-packages/torch/distributed/elastic/rendezvous/dynamic_rendezvous.py:1284] The node 'n2-System-Product-Name_3995_0' has failed to shutdown the rendezvous '456' due to an error of type RendezvousConnectionError.
 
 - we changed pytorch distributed initialization from tcp to nfs  
-- we switched from torchrun to python3 run (manual python run)
-- with nfs we encountered a new error: synchronization error (nroots mismatch)
-- when we switched back to tcp for the sake of trying: still synchronization error (nroots mismatch but apparently no nranks mismatch)
+- solution: we switched from torchrun to python3 run (manual python run) 
+
+4) synchronization error:
+- with nfs we encountered a new error: synchronization error (nroots mismatch) this error was suspected to be from the nfs initialization method in pytorch or from a mismatch in the NCCL* versions
 - we tried putting a delay to solve the sync error but didn't work
-- suspected reason to why sync error: nccl versions mismatch between worker and master.
+- when we switched back to tcp: still synchronization error.
+- solution: We updated all the NCCL versions on all nodes to prevent mismatch in the versions
+
+5) Time out connection error:
+- When the firewall was still enabled we faced a connection timeout issue.
+- we tried to allow the needed ports on the firewall but we still faced a timeout issue
+solution: we disabled the firewall completely. 
+
+
+Notes: 
+NCCL: It’s a high-performance communication library developed by NVIDIA, specifically designed to speed up multi-GPU and multi-node training in deep learning frameworks like PyTorch, TensorFlow, and MXNet.
+pytorch distributed connection is different from NCCL connection. 
+NCCL works only on TCP
+
+
+
+Team comments:
+- understand the difference between torchrun and python3 manual run
+    possible reason to why torchrun didn't work:
+    torchrun sets up a rendezvous server where all processes are successfully coordinated. In our case: the rendezvous server that we setup did not successfully coordinate the processes for some reason which caused the error. When we switched to python3 manual run, there was no need for the existence of rendezvous server which eliminated the error. However, the exact reason for the error is still unknown. 
+- understand why allowing the needed ports on the firewall did not fix the issue.
+- understand more about etc/hosts changes
+    
+
+
