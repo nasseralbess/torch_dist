@@ -1,8 +1,15 @@
 #cloud-config
 autoinstall:
   version: 1
+  identity:
+    hostname: ubuntu-desktop
+    realname: "User"
+    username: n1
+    password: "$6$YY0yP14wDrktdZYX$g8J1v9SqL5CSPi9xvwJojZSO4MpY5YOWNOcD1XxfPc9U0ZCla0vE44GywZpDBbX9Z9/JZew.gqRsvHt/wly4S/"
+
   packages:
     - ubuntu-desktop
+
   snaps:
     - name: firefox
     - name: gnome-3-38-2004
@@ -11,38 +18,16 @@ autoinstall:
     - name: snapd-desktop-integration
     - name: code
 
-  identity:
-    realname: ''
-    username: n1
-    password: '$6$YY0yP14wDrktdZYX$g8J1v9SqL5CSPi9xvwJojZSO4MpY5YOWNOcD1XxfPc9U0ZCla0vE44GywZpDBbX9Z9/JZew.gqRsvHt/wly4S/'
-
-  hostname: ubuntu-desktop
-
   network:
     version: 2
     renderer: NetworkManager
     wifis:
-      wlo1:
-        dhcp4: yes
+      "*":
         access-points:
-          "Galaxy A71DAE1":
-            password: "feje2101"
+          "YourSSID":
+            password: "YourPassword"
+        dhcp4: true
 
   storage:
     layout:
       name: direct
-
-  # early-commands:
-  #   - echo 'linux-generic-hwe-24.04' > /run/kernel-meta-package
-
-  # late-commands:
-  #   - >
-  #     curtin in-target --
-  #     sed -i /etc/default/grub -e
-  #     's/GRUB_CMDLINE_LINUX_DEFAULT=".*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/'
-  #   - curtin in-target -- update-grub
-  #   - >
-  #     curtin in-target -- bash -c "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && wget https://raw.githubusercontent.com/nasseralbess/torch_dist/main/conf.yaml && bash Miniconda3-latest-Linux-x86_64.sh -b && echo 'source ~/miniconda3/bin/activate' >> ~/.bashrc && source ~/.bashrc && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda env create -f conf.yaml -y && conda activate cluster-torch && pip install nvidia-nccl-cu12==2.26.2"
-  #   - curtin in-target -- apt-get install -y git
-  #   - curtin in-target -- git clone https://github.com/nasseralbess/torch_dist ~/torch_dist
-  #   - curtin in-target -- git clone https://github.com/khaledabuq/ml_project ~/ml_project
