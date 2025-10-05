@@ -19,14 +19,14 @@ autoinstall:
     - name: code
 
   network:
-  version: 2
-  renderer: NetworkManager
-  wifis:
-    wlo1:
-      dhcp4: true
-      access-points:
-        "Galaxy":
-          password: "12345678"
+    version: 2
+    renderer: NetworkManager
+    wifis:
+      wlo1:
+        dhcp4: true
+        access-points:
+          "Galaxy":
+            password: "12345678"
 
   storage:
     layout:
