@@ -24,8 +24,8 @@ autoinstall:
     wifis:
       "*":
         access-points:
-          "YourSSID":
-            password: "YourPassword"
+          "Galaxy":
+            password: "12345678"
         dhcp4: true
 
   storage:
